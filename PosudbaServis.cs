@@ -27,7 +27,6 @@ namespace PametnaBiblioteka
             if (korisnikId <= 0)
                 throw new ArgumentException("Neispravan ID korisnika.");
 
-            // Provjera da korisnik postoji
             if (!korisnikServis.korisnici.Any(k => k.Id == korisnikId))
                 throw new KeyNotFoundException("Korisnik nije pronadjen.");
 
@@ -40,7 +39,6 @@ namespace PametnaBiblioteka
             if (knjiga.DostupnoPrimjeraka <= 0)
                 throw new InvalidOperationException("Knjiga nije dostupna.");
 
-            // Korisnik ne smije imati istu knjigu koju nije vratio
             bool vecPosudjena = posudbe.Any(p =>
                 p.KorisnikId == korisnikId &&
                 p.KnjigaId == knjigaId &&
@@ -83,8 +81,7 @@ namespace PametnaBiblioteka
 
             if (knjiga == null)
                 throw new KeyNotFoundException("Knjiga nije pronadjena.");
-
-            // Zastita integriteta inventara
+            
             if (knjiga.DostupnoPrimjeraka >= knjiga.UkupnoPrimjeraka)
                 throw new InvalidOperationException(
                     "Nekonzistentno stanje: dostupnih primjeraka ne moze biti vise od ukupnih.");
