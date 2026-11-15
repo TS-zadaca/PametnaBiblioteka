@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../SmartLibrary.Users/SmartLibrary.Users.csproj" /></ItemGroup>
+</Project>
