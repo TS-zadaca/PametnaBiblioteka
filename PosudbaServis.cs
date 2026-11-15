@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +7,7 @@ namespace PametnaBiblioteka
     public class PosudbaServis
     {
         private KnjigaServis knjigaServis;
+        private KorisnikServis korisnikServis;
         private List<Posudba> posudbe;
 
         private int sljedeciId = 1;
@@ -15,9 +15,10 @@ namespace PametnaBiblioteka
         public decimal CijenaPoDanu { get; set; } = 1.00m;
         public int BrojDanaPosudbe { get; set; } = 14;
 
-        public PosudbaServis(KnjigaServis knjigaServis)
+        public PosudbaServis(KnjigaServis knjigaServis, KorisnikServis korisnikServis)
         {
             this.knjigaServis = knjigaServis;
+            this.korisnikServis = korisnikServis;
             posudbe = new List<Posudba>();
         }
 
@@ -26,14 +27,28 @@ namespace PametnaBiblioteka
             if (korisnikId <= 0)
                 throw new ArgumentException("Neispravan ID korisnika.");
 
+            // Provjera da korisnik postoji
+            if (!korisnikServis.korisnici.Any(k => k.Id == korisnikId))
+                throw new KeyNotFoundException("Korisnik nije pronadjen.");
+
             Knjiga knjiga = knjigaServis.knjige
                 .FirstOrDefault(k => k.Id == knjigaId);
 
             if (knjiga == null)
-                throw new Exception("Knjiga nije pronadjena.");
+                throw new KeyNotFoundException("Knjiga nije pronadjena.");
 
             if (knjiga.DostupnoPrimjeraka <= 0)
-                throw new Exception("Knjiga nije dostupna.");
+                throw new InvalidOperationException("Knjiga nije dostupna.");
+
+            // Korisnik ne smije imati istu knjigu koju nije vratio
+            bool vecPosudjena = posudbe.Any(p =>
+                p.KorisnikId == korisnikId &&
+                p.KnjigaId == knjigaId &&
+                !p.Vracena);
+
+            if (vecPosudjena)
+                throw new InvalidOperationException(
+                    "Korisnik vec ima posudjenu ovu knjigu.");
 
             DateTime danas = DateTime.Today;
 
@@ -61,13 +76,18 @@ namespace PametnaBiblioteka
                 !p.Vracena);
 
             if (posudba == null)
-                throw new Exception("Aktivna posudba nije pronadjena.");
+                throw new InvalidOperationException("Aktivna posudba nije pronadjena.");
 
             Knjiga knjiga = knjigaServis.knjige
                 .FirstOrDefault(k => k.Id == knjigaId);
 
             if (knjiga == null)
-                throw new Exception("Knjiga nije pronadjena.");
+                throw new KeyNotFoundException("Knjiga nije pronadjena.");
+
+            // Zastita integriteta inventara
+            if (knjiga.DostupnoPrimjeraka >= knjiga.UkupnoPrimjeraka)
+                throw new InvalidOperationException(
+                    "Nekonzistentno stanje: dostupnih primjeraka ne moze biti vise od ukupnih.");
 
             DateTime danas = DateTime.Today;
 
@@ -112,7 +132,7 @@ namespace PametnaBiblioteka
             );
 
             if (posudba == null)
-                throw new Exception("Posudba nije pronadjena.");
+                throw new KeyNotFoundException("Posudba nije pronadjena.");
 
             DateTime datum = posudba.DatumVracanja ?? DateTime.Today;
 
