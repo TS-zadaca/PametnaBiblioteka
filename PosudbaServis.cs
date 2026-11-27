@@ -6,19 +6,31 @@ namespace PametnaBiblioteka
 {
     public class PosudbaServis
     {
-        private KnjigaServis knjigaServis;
-        private KorisnikServis korisnikServis;
-        private List<Posudba> posudbe;
+        private readonly KnjigaServis knjigaServis;
+        private readonly KorisnikServis korisnikServis;
+        private readonly List<Posudba> posudbe;
 
         private int sljedeciId = 1;
 
-        public decimal CijenaPoDanu { get; set; } = 1.00m;
-        public int BrojDanaPosudbe { get; set; } = 14;
-
-        public PosudbaServis(KnjigaServis knjigaServis, KorisnikServis korisnikServis)
+        private readonly Func<DateTime> danas;
+        private decimal cijenaPoDanu = 1m;
+        private int brojDanaPosudbe = 14;
+        public decimal CijenaPoDanu
         {
-            this.knjigaServis = knjigaServis;
-            this.korisnikServis = korisnikServis;
+            get => cijenaPoDanu;
+            set => cijenaPoDanu = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        public int BrojDanaPosudbe
+        {
+            get => brojDanaPosudbe;
+            set => brojDanaPosudbe = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+
+        public PosudbaServis(KnjigaServis knjigaServis, KorisnikServis korisnikServis, Func<DateTime>? sat = null)
+        {
+            this.knjigaServis = knjigaServis ?? throw new ArgumentNullException(nameof(knjigaServis));
+            this.korisnikServis = korisnikServis ?? throw new ArgumentNullException(nameof(korisnikServis));
+            danas = sat ?? (() => DateTime.Today);
             posudbe = new List<Posudba>();
         }
 
@@ -27,10 +39,10 @@ namespace PametnaBiblioteka
             if (korisnikId <= 0)
                 throw new ArgumentException("Neispravan ID korisnika.");
 
-            if (!korisnikServis.korisnici.Any(k => k.Id == korisnikId))
+            if (korisnikServis.PronadjiKorisnika(korisnikId) == null)
                 throw new KeyNotFoundException("Korisnik nije pronadjen.");
 
-            Knjiga knjiga = knjigaServis.knjige
+            Knjiga? knjiga = knjigaServis.knjige
                 .FirstOrDefault(k => k.Id == knjigaId);
 
             if (knjiga == null)
@@ -48,7 +60,7 @@ namespace PametnaBiblioteka
                 throw new InvalidOperationException(
                     "Korisnik vec ima posudjenu ovu knjigu.");
 
-            DateTime danas = DateTime.Today;
+            DateTime danas = this.danas().Date;
 
             Posudba novaPosudba = new Posudba(
                 sljedeciId++,
@@ -68,7 +80,7 @@ namespace PametnaBiblioteka
 
         public void VratiKnjigu(int korisnikId, int knjigaId)
         {
-            Posudba posudba = posudbe.FirstOrDefault(p =>
+            Posudba? posudba = posudbe.FirstOrDefault(p =>
                 p.KorisnikId == korisnikId &&
                 p.KnjigaId == knjigaId &&
                 !p.Vracena);
@@ -76,17 +88,17 @@ namespace PametnaBiblioteka
             if (posudba == null)
                 throw new InvalidOperationException("Aktivna posudba nije pronadjena.");
 
-            Knjiga knjiga = knjigaServis.knjige
+            Knjiga? knjiga = knjigaServis.knjige
                 .FirstOrDefault(k => k.Id == knjigaId);
 
             if (knjiga == null)
                 throw new KeyNotFoundException("Knjiga nije pronadjena.");
-            
+
             if (knjiga.DostupnoPrimjeraka >= knjiga.UkupnoPrimjeraka)
                 throw new InvalidOperationException(
                     "Nekonzistentno stanje: dostupnih primjeraka ne moze biti vise od ukupnih.");
 
-            DateTime danas = DateTime.Today;
+            DateTime danas = this.danas().Date;
 
             posudba.DatumVracanja = danas;
             posudba.Vracena = true;
@@ -124,14 +136,14 @@ namespace PametnaBiblioteka
 
         public decimal ObracunajZakasninu(int posudbaId)
         {
-            Posudba posudba = posudbe.FirstOrDefault(
+            Posudba? posudba = posudbe.FirstOrDefault(
                 p => p.Id == posudbaId
             );
 
             if (posudba == null)
                 throw new KeyNotFoundException("Posudba nije pronadjena.");
 
-            DateTime datum = posudba.DatumVracanja ?? DateTime.Today;
+            DateTime datum = posudba.DatumVracanja ?? danas().Date;
 
             int kasnjenje = Math.Max(
                 0, (datum - posudba.RokVracanja).Days

@@ -15,11 +15,29 @@ namespace PametnaBiblioteka
     // Za izmjenu registrovanog korisnika koristi se KorisnikServis.
     public class Korisnik
     {
-        public int Id { get; }
-        public string Ime { get; }
-        public string Prezime { get; }
-        public string Email { get; }
-        public UlogaKorisnika Uloga { get; }
+        private const int MinDuzinaImena = 2;
+        private const int MaxDuzinaImena = 50;
+
+        public int Id
+        {
+            get;
+        }
+        public string Ime
+        {
+            get;
+        }
+        public string Prezime
+        {
+            get;
+        }
+        public string Email
+        {
+            get;
+        }
+        public UlogaKorisnika Uloga
+        {
+            get;
+        }
 
         public Korisnik(int id, string ime, string prezime, string email,
             UlogaKorisnika uloga = UlogaKorisnika.Clan)
@@ -41,11 +59,11 @@ namespace PametnaBiblioteka
         {
             string tekst = (vrijednost ?? string.Empty).Trim().Normalize(NormalizationForm.FormC);
 
-            if (tekst.Length < 2 || tekst.Length > 50 || !tekst.Any(char.IsLetter) ||
+            if (tekst.Length < MinDuzinaImena || tekst.Length > MaxDuzinaImena || !tekst.Any(char.IsLetter) ||
                 tekst.Any(c => !char.IsLetter(c) && c != ' ' && c != '-' && c != '\''))
             {
                 throw new ArgumentException(
-                    nazivPolja + " mora imati 2 do 50 znakova: slova, razmak, crticu ili apostrof.");
+                    $"{nazivPolja} mora imati {MinDuzinaImena} do {MaxDuzinaImena} znakova: slova, razmak, crticu ili apostrof.");
             }
 
             return tekst;
