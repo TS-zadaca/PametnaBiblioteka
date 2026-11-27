@@ -22,9 +22,9 @@ namespace PametnaBiblioteka
                 return;
             }
 
-            if (kolicina <= 0)
+            if (id <= 0 || kolicina <= 0)
             {
-                Console.WriteLine("Greska: Kolicina mora biti veca od 0.");
+                Console.WriteLine("Greska: ID i kolicina moraju biti veci od 0.");
                 return;
             }
 
@@ -35,10 +35,17 @@ namespace PametnaBiblioteka
 
         public void AzurirajKnjigu(int id, string noviNaslov, string noviAutor, string noviZanr, int novaKolicina)
         {
-            Knjiga k = knjige.FirstOrDefault(x => x.Id == id);
+            Knjiga? k = knjige.FirstOrDefault(x => x.Id == id);
             if (k == null)
             {
                 Console.WriteLine("Knjiga nije pronadjena.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(noviNaslov) || string.IsNullOrWhiteSpace(noviAutor) ||
+                string.IsNullOrWhiteSpace(noviZanr) || novaKolicina < 0)
+            {
+                Console.WriteLine("Greska: Neispravni podaci za izmjenu knjige.");
                 return;
             }
 
@@ -59,7 +66,7 @@ namespace PametnaBiblioteka
 
         public void ObrisiKnjigu(int id)
         {
-            Knjiga k = knjige.FirstOrDefault(x => x.Id == id);
+            Knjiga? k = knjige.FirstOrDefault(x => x.Id == id);
             if (k == null)
             {
                 Console.WriteLine("Knjiga nije pronadjena.");
@@ -76,21 +83,21 @@ namespace PametnaBiblioteka
             Console.WriteLine("Knjiga uspjesno obrisana.");
         }
 
-        public List<Knjiga> PretraziKnjige(string pojam)
+        public List<Knjiga> PretraziKnjige(string? pojam)
         {
             if (string.IsNullOrWhiteSpace(pojam))
                 return new List<Knjiga>();
 
             return knjige.Where(k =>
-                k.Naslov.ToLower().Contains(pojam.ToLower()) ||
-                k.Autor.ToLower().Contains(pojam.ToLower()) ||
-                k.Zanr.ToLower().Contains(pojam.ToLower())
+                k.Naslov.Contains(pojam.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                k.Autor.Contains(pojam.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                k.Zanr.Contains(pojam.Trim(), StringComparison.OrdinalIgnoreCase)
             ).ToList();
         }
 
         public bool DaLiJeDostupna(int id)
         {
-            Knjiga k = knjige.FirstOrDefault(x => x.Id == id);
+            Knjiga? k = knjige.FirstOrDefault(x => x.Id == id);
             return k != null && k.DostupnoPrimjeraka > 0;
         }
     }

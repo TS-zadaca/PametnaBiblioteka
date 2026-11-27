@@ -21,11 +21,12 @@ namespace PametnaBiblioteka
         public Korisnik RegistrujKorisnika(int id, string ime, string prezime, string email,
             UlogaKorisnika uloga = UlogaKorisnika.Clan)
         {
-            // Konstruktor provjerava sva polja prije promjene liste.
-            Korisnik noviKorisnik = new Korisnik(id, ime, prezime, email, uloga);
-
+            // Dupli ID odbijamo prije kreiranja i validacije novog objekta.
             if (korisnici.Any(k => k.Id == id))
                 throw new ArgumentException("Korisnik s tim ID-em vec postoji.", nameof(id));
+
+            // Konstruktor provjerava sva polja prije promjene liste.
+            Korisnik noviKorisnik = new Korisnik(id, ime, prezime, email, uloga);
 
             ProvjeriJedinstvenEmail(noviKorisnik.Email, id);
             korisnici.Add(noviKorisnik);
@@ -70,7 +71,7 @@ namespace PametnaBiblioteka
             return korisnici.FirstOrDefault(k => k.Id == id);
         }
 
-        public IReadOnlyList<Korisnik> PrikaziSveKorisnike()
+        public IReadOnlyList<Korisnik> DajSveKorisnike()
         {
             // Kopija liste i nepromjenjivi objekti sprecavaju zaobilazenje provjera.
             return korisnici.OrderBy(k => k.Prezime).ThenBy(k => k.Ime).ToList().AsReadOnly();
